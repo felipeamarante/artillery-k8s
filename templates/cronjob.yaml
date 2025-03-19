@@ -1,0 +1,47 @@
+{{- range .Values.endpoints }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "artillery-load-testing.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "artillery-load-testing.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: load-test
+    endpoint: {{ .name }}
+spec:
+  # Setting a schedule that never occurs, as we want manual triggering only
+  schedule: "0 0 30 2 *"  # February 30th - a date that never happens
+  suspend: true  # Explicitly suspend the cronjob
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            {{- include "artillery-load-testing.selectorLabels" $ | nindent 12 }}
+            endpoint: {{ .name }}
+        spec:
+          serviceAccountName: {{ include "artillery-load-testing.serviceAccountName" $ }}
+          securityContext:
+            {{- toYaml $.Values.podSecurityContext | nindent 12 }}
+          containers:
+            - name: artillery
+              securityContext:
+                {{- toYaml $.Values.securityContext | nindent 16 }}
+              image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+              imagePullPolicy: {{ $.Values.image.pullPolicy }}
+              command:
+                - "/bin/sh"
+                - "/tests/run-test.sh"
+              resources:
+                {{- toYaml $.Values.resources | nindent 16 }}
+              volumeMounts:
+                - name: test-config
+                  mountPath: /tests
+          volumes:
+            - name: test-config
+              configMap:
+                name: {{ include "artillery-load-testing.fullname" $ }}-{{ .name }}
+                defaultMode: 0755
+          restartPolicy: Never
+{{- end }}

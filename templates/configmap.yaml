@@ -1,0 +1,46 @@
+{{- range .Values.endpoints }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "artillery-load-testing.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "artillery-load-testing.labels" $ | nindent 4 }}
+data:
+  test-script.yml: |
+    config:
+      target: "{{ .url }}"
+      phases:
+        - duration: {{ .duration }}
+          arrivalRate: {{ .requestsPerSecond }}
+          name: "Load test for {{ .name }}"
+      {{- if .virtualUsers }}
+      processor: "./processor.js"
+      {{- end }}
+    scenarios:
+      - name: "{{ .name }}"
+        flow:
+          - {{ .method | lower }}:
+              url: "/"
+              {{- if eq .method "POST" }}
+              {{- if .body }}
+              json: {{ .body }}
+              {{- end }}
+              {{- end }}
+  {{- if .virtualUsers }}
+  processor.js: |
+    module.exports = {
+      beforeScenario: function(context, ee, next) {
+        context.vars.virtualUsers = {{ .virtualUsers }};
+        return next();
+      }
+    };
+  {{- end }}
+  run-test.sh: |
+    #!/bin/sh
+    echo "Starting load test for {{ .name }}"
+    artillery run /tests/test-script.yml
+    echo "Load test completed"
+    echo "Keeping container alive for {{ $.Values.keepAliveDuration }} seconds"
+    sleep {{ $.Values.keepAliveDuration }}
+{{- end }}

@@ -1,0 +1,57 @@
+# Default values for artillery-load-testing
+# This is a YAML-formatted file.
+
+# Image configuration for Artillery container
+image:
+  repository: artilleryio/artillery
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# Service account configuration
+serviceAccount:
+  create: true
+  name: ""
+
+# Pod security context
+podSecurityContext: {}
+
+# Container security context
+securityContext: {}
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 200m
+    memory: 256Mi
+
+# Node selector
+nodeSelector: {}
+
+# Tolerations
+tolerations: []
+
+# Affinity
+affinity: {}
+
+# Load testing configuration
+endpoints:
+  - name: "test-api-1"
+    url: "https://api.example.com/test1"
+    method: "GET"
+    duration: 60 # in seconds
+    requestsPerSecond: 10
+    virtualUsers: 5
+
+  - name: "test-api-2"
+    url: "https://api.example.com/test2"
+    method: "POST"
+    body: '{"key": "value"}'
+    duration: 120
+    requestsPerSecond: 20
+    virtualUsers: 10
+
+# Time (in seconds) the container stays alive after test completion
+keepAliveDuration: 300
