@@ -15,6 +15,7 @@ spec:
   concurrencyPolicy: Forbid
   jobTemplate:
     spec:
+      backoffLimit: 0  # No retries if the job fails
       template:
         metadata:
           labels:
@@ -30,9 +31,14 @@ spec:
                 {{- toYaml $.Values.securityContext | nindent 16 }}
               image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
               imagePullPolicy: {{ $.Values.image.pullPolicy }}
-              command:
-                - "/bin/sh"
-                - "/tests/run-test.sh"
+              command: ["sh", "-c"]
+              args:
+                - |
+                  echo "Starting load test for {{ .name }}"
+                  artillery run /tests/test-script.yml
+                  echo "Load test completed"
+                  echo "Keeping container alive for {{ $.Values.keepAliveDuration }} seconds"
+                  sleep {{ $.Values.keepAliveDuration }}
               resources:
                 {{- toYaml $.Values.resources | nindent 16 }}
               volumeMounts:

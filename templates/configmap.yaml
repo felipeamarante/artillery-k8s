@@ -36,11 +36,4 @@ data:
       }
     };
   {{- end }}
-  run-test.sh: |
-    #!/bin/sh
-    echo "Starting load test for {{ .name }}"
-    artillery run /tests/test-script.yml
-    echo "Load test completed"
-    echo "Keeping container alive for {{ $.Values.keepAliveDuration }} seconds"
-    sleep {{ $.Values.keepAliveDuration }}
 {{- end }}
