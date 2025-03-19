@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM node:alpine
 
 # Install dependencies
 RUN apk add --no-cache \
